@@ -8,25 +8,33 @@ datasource db {
   directUrl = env("DATABASE_DIRECT_URL")
 }
 
+enum Role {
+  ADMIN
+  MOD
+  GUEST
+}
+
 enum Region {
   NorthAmerica
   SouthAmerica
   Europe
   Africa
-  NorthernEurasia
-  AsiaPacific
+  Asia
   Oceania
 }
 
 model Account {
-  id        String   @id @unique @default(uuid())
-  email     String   @unique
-  region    Region
-  country   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  id          String   @id @unique @default(uuid())
+  googleEmail String   @unique
+  region      Region
+  country     String
+  role        Role     @default(GUEST)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 
   players Player[]
+
+  @@map("accounts")
 }
 
 model Player {
@@ -45,22 +53,29 @@ model Player {
 }
 
 model Game {
-  id        String   @id @unique @default(uuid())
-  name      String
-  url       String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  id            String   @id @unique @default(uuid())
+  name          String
+  description   String?
+  steamUrl      String?
+  thumbnailUrl  String?
+  backgroundUrl String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
 
   Match Match[]
+
+  @@map("games")
 }
 
 model Match {
-  id        String   @id @unique @default(uuid())
-  gameId    String
-  region    Region
-  accepted  Boolean
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  id              String   @id @unique @default(uuid())
+  gameId          String
+  region          Region
+  accepted        Boolean  @default(false)
+  screenshotUrl   String?
+  youtubeVideoUrl String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @default(now()) @updatedAt
 
   game Game @relation(fields: [gameId], references: [id])
 
