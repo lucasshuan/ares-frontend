@@ -23,6 +23,11 @@ enum Region {
   Oceania
 }
 
+enum MatchMode {
+  DUEL
+  TEAM
+}
+
 enum MatchStatus {
   ACCEPTED
   REJECTED
@@ -55,11 +60,38 @@ model Player {
   account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
   game    Game    @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
-  matchParticipations MatchParticipation[]
-  teamMemberships     TeamMember[]
+  participations  PlayerParticipation[]
+  teamMemberships TeamMember[]
 
   @@unique([gameId, username])
   @@map("players")
+}
+
+model Team {
+  id        String   @id @unique @default(uuid())
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  members        TeamMember[]
+  participations TeamParticipation[]
+  TourneySeed    TourneySeed[]
+
+  @@map("teams")
+}
+
+model TeamMember {
+  id        String   @id @unique @default(uuid())
+  name      String
+  playerId  String
+  teamId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@map("team_members")
 }
 
 model Game {
@@ -86,31 +118,44 @@ model Match {
   status        MatchStatus @default(ACCEPTED)
   screenshotUrl String?
   streamUrl     String?
-  teamfight     Boolean     @default(false)
+  mode          MatchMode   @default(DUEL)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @default(now()) @updatedAt
 
   game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
-  matchParticipations MatchParticipation[]
+  teamParticipations   TeamParticipation[]
+  playerParticipations PlayerParticipation[]
 
   @@map("matches")
 }
 
-model MatchParticipation {
+model PlayerParticipation {
   id        String   @id @unique @default(uuid())
-  playerId  String?
-  teamId    String?
+  playerId  String
   matchId   String
   score     Float
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  player Player? @relation(fields: [playerId], references: [id])
-  team   Team?   @relation(fields: [teamId], references: [id])
-  match  Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  match  Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
 
-  @@map("match_participations")
+  @@map("player_participations")
+}
+
+model TeamParticipation {
+  id        String   @id @unique @default(uuid())
+  teamId    String
+  matchId   String
+  score     Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  team  Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@map("team_participations")
 }
 
 model Tourney {
@@ -131,41 +176,17 @@ model Tourney {
 
 model TourneySeed {
   id        String   @id @unique @default(uuid())
+  tourneyId String
+  teamId    String
   name      String
   value     Int
-  tourneyId String
   phase     Int      @default(0)
   loser     Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  tourney Tourney @relation(fields: [tourneyId], references: [id])
+  tourney Tourney @relation(fields: [tourneyId], references: [id], onDelete: Cascade)
+  team    Team    @relation(fields: [teamId], references: [id], onDelete: Cascade)
 
   @@map("tourney_seeds")
-}
-
-model Team {
-  id        String   @id @unique @default(uuid())
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  members             TeamMember[]
-  matchParticipations MatchParticipation[]
-
-  @@map("teams")
-}
-
-model TeamMember {
-  id        String   @id @unique @default(uuid())
-  name      String
-  playerId  String
-  teamId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  player Player @relation(fields: [playerId], references: [id])
-  team   Team   @relation(fields: [teamId], references: [id])
-
-  @@map("team_members")
 }

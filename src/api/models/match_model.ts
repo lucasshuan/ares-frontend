@@ -1,15 +1,28 @@
-import { Match, MatchStatus, Region } from "@prisma/client";
+import { Match, MatchMode, MatchStatus, Region } from "@prisma/client";
 
-export type CreateMatchDTO = {
+type BaseCreateMatchDTO = {
   region: Region;
   gameId: string;
   status?: MatchStatus;
+  mode?: MatchMode;
   accepted?: boolean;
   screenshotUrl?: string;
   youtubeVideoUrl?: string;
 };
 
-export type UpdateMatchDTO = Pick<Match, "id"> & Partial<CreateMatchDTO>;
+type Participation = {
+  score: number;
+};
+
+export type CreateDuelMatchDTO = {
+  participations: ({ playerId: string } & Participation)[];
+} & BaseCreateMatchDTO;
+
+export type CreateTeamMatchDTO = {
+  participations: ({ teamId: string } & Participation)[];
+} & BaseCreateMatchDTO;
+
+export type UpdateMatchDTO = Pick<Match, "id"> & Partial<BaseCreateMatchDTO>;
 
 export interface EloRatingInput {
   rating1: number;
@@ -21,9 +34,13 @@ export interface EloRatingInput {
 
 export interface TeamfightMeanInput {
   participations: {
-    player: {
-      rating: number;
+    score: number;
+    team?: {
+      members: {
+        player: {
+          rating: number;
+        };
+      }[];
     };
-    team: number;
   }[];
 }

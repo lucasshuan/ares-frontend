@@ -1,6 +1,7 @@
-import { MatchStatus } from "@prisma/client";
+import { MatchMode, MatchStatus } from "@prisma/client";
 import {
-  CreateMatchDTO,
+  CreateDuelMatchDTO,
+  CreateTeamMatchDTO,
   EloRatingInput,
   TeamfightMeanInput,
   UpdateMatchDTO,
@@ -23,8 +24,24 @@ class MatchService {
               include: {
                 _count: {
                   select: {
-                    contestants: true,
-                    participations: true,
+                    matchParticipations: true,
+                  },
+                },
+              },
+            },
+            team: {
+              include: {
+                members: {
+                  include: {
+                    player: {
+                      include: {
+                        _count: {
+                          select: {
+                            matchParticipations: true,
+                          },
+                        },
+                      },
+                    },
                   },
                 },
               },
@@ -35,9 +52,37 @@ class MatchService {
     });
   }
 
-  async create(data: CreateMatchDTO) {
+  async createAsDuel({ participations, mode, ...data }: CreateDuelMatchDTO) {
     return prisma.match.create({
-      data,
+      data: {
+        participations: {
+          createMany: {
+            data: participations.map(({ playerId, score }) => ({
+              playerId,
+              score,
+            })),
+          },
+        },
+        mode: mode ?? MatchMode.DUEL,
+        ...data,
+      },
+    });
+  }
+
+  async createAsTeam({ participations, mode, ...data }: CreateTeamMatchDTO) {
+    return prisma.match.create({
+      data: {
+        participations: {
+          createMany: {
+            data: participations.map(({ teamId, score }) => ({
+              teamId,
+              score,
+            })),
+          },
+        },
+        mode: mode ?? MatchMode.TEAM,
+        ...data,
+      },
     });
   }
 
@@ -46,7 +91,7 @@ class MatchService {
     if (!match) throw new Error("Match not found");
 
     return prisma.$transaction(async (prisma) => {
-      if (match.teamfight) {
+      if (match.mode === MatchMode.TEAM) {
         const teams = this.teamAverageRatings({
           participations: match.participations,
         });
@@ -115,30 +160,25 @@ class MatchService {
   }
 
   private teamAverageRatings({ participations }: TeamfightMeanInput) {
-    const defaultTeam = { score: 0, numPlayers: 0, avgRating: 0 };
-    const teams = new Map<number, typeof defaultTeam>();
-    participations.forEach((participation) => {
-      if (!teams.has(participation.team)) {
-        teams.set(participation.team, defaultTeam);
-      }
-      const team = teams.get(participation.team)!;
-      if (!team.score) {
-        team.score = participation.player.rating;
-      }
-      team.avgRating += participation.player.rating;
-      team.numPlayers++;
+    const teams = participations.map((participation) => participation.team!);
+    const minTeamSize = Math.min(...teams.map((team) => team.members.length));
+    return participations.map((participation) => {
+      let avgRating = 0;
+      participation.team!.members.forEach((member) => {
+        avgRating += member.player.rating;
+      });
+      avgRating /= minTeamSize;
+      return {
+        avgRating,
+        score: participation.score,
+        numMembers: participation.team!.members.length,
+      };
     });
-    const minNumPlayers = Math.min(
-      ...teams.values().map((team) => team.numPlayers)
-    );
-    teams.forEach((team) => {
-      team.avgRating /= minNumPlayers;
-    });
-    return teams.values().toArray();
   }
 
-  private kFactor(numMatches: number, isTeamfight?: boolean) {
-    return (800 / numMatches) * (isTeamfight ? 0.5 : 1);
+  private kFactor(numMatches: number, mode?: MatchMode) {
+    const mult = mode === MatchMode.TEAM ? 0.5 : 1;
+    return (800 / numMatches) * mult;
   }
 }
 
