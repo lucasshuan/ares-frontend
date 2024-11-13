@@ -1,4 +1,4 @@
-import { getRegionByCountry } from "@/lib/countries";
+import { getRegionByCountry } from "@/lib/region";
 import prisma from "../prisma";
 import { CreateAccountDTO, UpdateAccountDTO } from "../models/account_model";
 

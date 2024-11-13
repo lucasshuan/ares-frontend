@@ -23,6 +23,12 @@ enum Region {
   Oceania
 }
 
+enum MatchStatus {
+  ACCEPTED
+  REJECTED
+  PENDING
+}
+
 model Account {
   id          String   @id @unique @default(uuid())
   googleEmail String   @unique
@@ -40,60 +46,126 @@ model Account {
 model Player {
   id        String   @id @unique @default(uuid())
   accountId String
-  username  String   @unique
+  gameId    String
+  username  String
   rating    Float    @default(1000)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  account Account @relation(fields: [accountId], references: [id])
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  game    Game    @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
-  participations Participation[]
+  matchParticipations MatchParticipation[]
+  teamMemberships     TeamMember[]
 
+  @@unique([gameId, username])
   @@map("players")
 }
 
 model Game {
-  id            String   @id @unique @default(uuid())
-  name          String
-  description   String?
-  steamUrl      String?
-  thumbnailUrl  String?
-  backgroundUrl String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @default(now()) @updatedAt
+  id                 String   @id @unique @default(uuid())
+  name               String   @unique
+  description        String?
+  officialWebsiteUrl String?
+  steamUrl           String?
+  thumbnailUrl       String?
+  backgroundUrl      String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @default(now()) @updatedAt
 
-  Match Match[]
+  matches Match[]
+  players Player[]
 
   @@map("games")
 }
 
 model Match {
-  id              String   @id @unique @default(uuid())
-  gameId          String
-  region          Region
-  accepted        Boolean  @default(false)
-  screenshotUrl   String?
-  youtubeVideoUrl String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @default(now()) @updatedAt
+  id            String      @id @unique @default(uuid())
+  gameId        String
+  region        Region
+  status        MatchStatus @default(ACCEPTED)
+  screenshotUrl String?
+  streamUrl     String?
+  teamfight     Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @default(now()) @updatedAt
 
-  game Game @relation(fields: [gameId], references: [id])
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
-  participations Participation[]
+  matchParticipations MatchParticipation[]
 
   @@map("matches")
 }
 
-model Participation {
+model MatchParticipation {
   id        String   @id @unique @default(uuid())
-  playerId  String
+  playerId  String?
+  teamId    String?
   matchId   String
-  score     Int
+  score     Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  player Player? @relation(fields: [playerId], references: [id])
+  team   Team?   @relation(fields: [teamId], references: [id])
+  match  Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@map("match_participations")
+}
+
+model Tourney {
+  id            String   @id @unique @default(uuid())
+  gameId        String
+  name          String
+  description   String?
+  thumbnailUrl  String?
+  teamMinLength Int      @default(1)
+  teamMaxLength Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+
+  tourneySeeds TourneySeed[]
+
+  @@map("tourneys")
+}
+
+model TourneySeed {
+  id        String   @id @unique @default(uuid())
+  name      String
+  value     Int
+  tourneyId String
+  phase     Int      @default(0)
+  loser     Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  tourney Tourney @relation(fields: [tourneyId], references: [id])
+
+  @@map("tourney_seeds")
+}
+
+model Team {
+  id        String   @id @unique @default(uuid())
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  members             TeamMember[]
+  matchParticipations MatchParticipation[]
+
+  @@map("teams")
+}
+
+model TeamMember {
+  id        String   @id @unique @default(uuid())
+  name      String
+  playerId  String
+  teamId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
   player Player @relation(fields: [playerId], references: [id])
-  match  Match  @relation(fields: [matchId], references: [id])
+  team   Team   @relation(fields: [teamId], references: [id])
 
-  @@map("participations")
+  @@map("team_members")
 }

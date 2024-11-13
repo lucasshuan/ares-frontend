@@ -1,13 +1,29 @@
 import prisma from "../prisma";
-import { CreatePlayerDTO, UpdatePlayerDTO } from "../models/player_model";
+import {
+  CreatePlayerDTO,
+  ListPlayersDTO,
+  UpdatePlayerDTO,
+} from "../models/player_model";
 
 class PlayerService {
-  async list() {
-    return prisma.player.findMany();
+  async list({ account, game, order, skip, take }: ListPlayersDTO) {
+    return prisma.player.findMany({
+      where: {
+        account,
+        game,
+      },
+      orderBy: {
+        rating: order,
+      },
+      skip,
+      take,
+    });
   }
 
   async findById(id: string) {
-    return prisma.player.findUnique({ where: { id } });
+    return prisma.player.findUnique({
+      where: { id },
+    });
   }
 
   async create(data: CreatePlayerDTO) {
