@@ -1,25 +1,21 @@
-import { Match, MatchMode, MatchStatus, Region } from "@prisma/client";
+import { Match, MatchStatus, Region } from "@prisma/client";
 
 type BaseCreateMatchDTO = {
   region: Region;
   gameId: string;
   status?: MatchStatus;
-  mode?: MatchMode;
   accepted?: boolean;
   screenshotUrl?: string;
   youtubeVideoUrl?: string;
 };
 
-type Participation = {
+type Participant = {
+  playerId: string;
   score: number;
 };
 
-export type CreateDuelMatchDTO = {
-  participations: ({ playerId: string } & Participation)[];
-} & BaseCreateMatchDTO;
-
-export type CreateTeamMatchDTO = {
-  participations: ({ teamId: string } & Participation)[];
+export type CreateMatchDTO = {
+  participants: Participant[];
 } & BaseCreateMatchDTO;
 
 export type UpdateMatchDTO = Pick<Match, "id"> & Partial<BaseCreateMatchDTO>;

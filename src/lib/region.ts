@@ -4,12 +4,12 @@ import iso from "iso-3166-1";
 type RegionShort = "EU" | "NA" | "SA" | "AS" | "AF" | "OC";
 
 const regionShortMap: { [regionShort: string]: Region } = {
-  EU: Region.Europe,
-  NA: Region.NorthAmerica,
-  SA: Region.SouthAmerica,
-  AS: Region.Asia,
-  AF: Region.Africa,
-  OC: Region.Oceania,
+  EU: Region.EUROPE,
+  NA: Region.NORTH_AMERICA,
+  SA: Region.SOUTH_AMERICA,
+  AS: Region.ASIA,
+  AF: Region.AFRICA,
+  OC: Region.OCEANIA,
 };
 
 const countryToRegionMap: { [country: string]: RegionShort } = {

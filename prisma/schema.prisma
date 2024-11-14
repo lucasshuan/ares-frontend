@@ -15,87 +15,61 @@ enum Role {
 }
 
 enum Region {
-  NorthAmerica
-  SouthAmerica
-  Europe
-  Africa
-  Asia
-  Oceania
-}
-
-enum MatchMode {
-  DUEL
-  TEAM
+  NORTH_AMERICA
+  SOUTH_AMERICA
+  EUROPE
+  AFRICA
+  ASIA
+  OCEANIA
 }
 
 enum MatchStatus {
   ACCEPTED
   REJECTED
-  PENDING
+  PENDING_ACCEPTANCE
+  IN_PROGRESS
+  SCHEDULED
 }
 
 model Account {
-  id          String   @id @unique @default(uuid())
+  id          String   @id @default(uuid())
   googleEmail String   @unique
-  region      Region
   country     String
+  region      Region
   role        Role     @default(GUEST)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
 
-  players Player[]
-
-  @@map("accounts")
+  players           Player[]
+  tourneysOrganized Tourney[]
+  matchesCreated    Match[]
+  following         Account[] @relation("AccountFollowers")
+  followers         Account[] @relation("AccountFollowers")
 }
 
 model Player {
-  id        String   @id @unique @default(uuid())
-  accountId String
-  gameId    String
-  username  String
-  rating    Float    @default(1000)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  id          String   @id @default(uuid())
+  accountId   String
+  gameId      String
+  username    String
+  rating      Int      @default(0)
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 
   account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
   game    Game    @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
-  participations  PlayerParticipation[]
-  teamMemberships TeamMember[]
+  participations  Participation[]
+  clanMemberships ClanMember[]
+  ownedClans      Clan[]
+  tourneyRosters  TourneyRoster[]
 
   @@unique([gameId, username])
-  @@map("players")
-}
-
-model Team {
-  id        String   @id @unique @default(uuid())
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  members        TeamMember[]
-  participations TeamParticipation[]
-  TourneySeed    TourneySeed[]
-
-  @@map("teams")
-}
-
-model TeamMember {
-  id        String   @id @unique @default(uuid())
-  name      String
-  playerId  String
-  teamId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-
-  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
-
-  @@map("team_members")
 }
 
 model Game {
-  id                 String   @id @unique @default(uuid())
+  id                 String   @id @default(uuid())
   name               String   @unique
   description        String?
   officialWebsiteUrl String?
@@ -107,86 +81,118 @@ model Game {
 
   matches Match[]
   players Player[]
-
-  @@map("games")
+  clans   Clan[]
 }
 
 model Match {
-  id            String      @id @unique @default(uuid())
+  id            String      @id @default(uuid())
+  creatorId     String?
   gameId        String
   region        Region
   status        MatchStatus @default(ACCEPTED)
   screenshotUrl String?
   streamUrl     String?
-  mode          MatchMode   @default(DUEL)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @default(now()) @updatedAt
 
-  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  creator Account? @relation(fields: [creatorId], references: [id])
+  game    Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
-  teamParticipations   TeamParticipation[]
-  playerParticipations PlayerParticipation[]
-
-  @@map("matches")
+  teams             MatchTeam[]
+  schedule          TourneySchedule @relation(fields: [tourneyScheduleId], references: [id])
+  tourneyScheduleId String
 }
 
-model PlayerParticipation {
-  id        String   @id @unique @default(uuid())
-  playerId  String
+model MatchTeam {
+  id        String   @id @default(uuid())
   matchId   String
-  score     Float
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
-  match  Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  matches Match @relation(fields: [matchId], references: [id])
 
-  @@map("player_participations")
+  participations Participation[]
 }
 
-model TeamParticipation {
-  id        String   @id @unique @default(uuid())
+model Participation {
+  id        String   @id @default(uuid())
   teamId    String
-  matchId   String
-  score     Float
+  playerId  String
+  info      Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  team  Team  @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  team   MatchTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  player Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
+}
 
-  @@map("team_participations")
+model Clan {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  region      Region
+  ownerId     String
+  gameId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  game  Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  owner Player @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  members ClanMember[]
+}
+
+model ClanMember {
+  id        String   @id @default(uuid())
+  playerId  String
+  clanId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  clan   Clan   @relation(fields: [clanId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
 }
 
 model Tourney {
-  id            String   @id @unique @default(uuid())
-  gameId        String
-  name          String
-  description   String?
-  thumbnailUrl  String?
-  teamMinLength Int      @default(1)
-  teamMaxLength Int      @default(1)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @default(now()) @updatedAt
+  id          String   @id @default(uuid())
+  organizerId String
+  region      Region?
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 
-  tourneySeeds TourneySeed[]
+  organizer Account @relation(fields: [accountId], references: [id])
 
-  @@map("tourneys")
+  rosters   TourneyRoster[]
+  accountId String
 }
 
-model TourneySeed {
-  id        String   @id @unique @default(uuid())
+model TourneyRoster {
+  id        String   @id @default(uuid())
   tourneyId String
-  teamId    String
   name      String
-  value     Int
-  phase     Int      @default(0)
-  loser     Boolean  @default(false)
+  logoUrl   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  tourney Tourney @relation(fields: [tourneyId], references: [id], onDelete: Cascade)
-  team    Team    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  tourney Tourney @relation(fields: [tourneyId], references: [id])
 
-  @@map("tourney_seeds")
+  players   Player[]
+  schedules TourneySchedule[]
+}
+
+model TourneySchedule {
+  id          String   @id @default(uuid())
+  tourneyId   String
+  matchId     String?
+  successorId String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  successor TourneySchedule @relation("PlannedTourneySchedule", fields: [successorId], references: [id])
+
+  predecessors TourneySchedule[] @relation("PlannedTourneySchedule")
+  matches      Match[]
+  rosters      TourneyRoster[]
 }

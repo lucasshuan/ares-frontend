@@ -1,13 +1,12 @@
-import { MatchMode, MatchStatus } from "@prisma/client";
+import { MatchStatus } from "@prisma/client";
 import {
-  CreateDuelMatchDTO,
-  CreateTeamMatchDTO,
+  CreateMatchDTO,
   EloRatingInput,
   TeamfightMeanInput,
   UpdateMatchDTO,
 } from "../models/match_model";
-import prisma from "../prisma";
 import { playerService } from "./player_service";
+import prisma from "../database/prisma";
 
 class MatchService {
   async list() {
@@ -18,28 +17,15 @@ class MatchService {
     return prisma.match.findUnique({
       where: { id },
       include: {
-        participations: {
+        teams: {
           include: {
-            player: {
+            participations: {
               include: {
-                _count: {
-                  select: {
-                    matchParticipations: true,
-                  },
-                },
-              },
-            },
-            team: {
-              include: {
-                members: {
+                players: {
                   include: {
-                    player: {
-                      include: {
-                        _count: {
-                          select: {
-                            matchParticipations: true,
-                          },
-                        },
+                    _count: {
+                      select: {
+                        participations: true,
                       },
                     },
                   },
@@ -52,35 +38,17 @@ class MatchService {
     });
   }
 
-  async createAsDuel({ participations, mode, ...data }: CreateDuelMatchDTO) {
+  async create({ participants, ...data }: CreateMatchDTO) {
     return prisma.match.create({
       data: {
         participations: {
           createMany: {
-            data: participations.map(({ playerId, score }) => ({
+            data: participants.map(({ playerId, score }) => ({
               playerId,
               score,
             })),
           },
         },
-        mode: mode ?? MatchMode.DUEL,
-        ...data,
-      },
-    });
-  }
-
-  async createAsTeam({ participations, mode, ...data }: CreateTeamMatchDTO) {
-    return prisma.match.create({
-      data: {
-        participations: {
-          createMany: {
-            data: participations.map(({ teamId, score }) => ({
-              teamId,
-              score,
-            })),
-          },
-        },
-        mode: mode ?? MatchMode.TEAM,
         ...data,
       },
     });
@@ -91,40 +59,22 @@ class MatchService {
     if (!match) throw new Error("Match not found");
 
     return prisma.$transaction(async (prisma) => {
-      if (match.mode === MatchMode.TEAM) {
-        const teams = this.teamAverageRatings({
-          participations: match.participations,
+      const teams = this.teamAverageRatings({
+        participations: match.participations,
+      });
+      for (const participation of match.participations) {
+        const rating = this.eloRating({
+          rating1: participation.player.rating,
+          rating2: teams[1].avgRating,
+          score1: teams[0].score,
+          score2: teams[1].score,
+          k: this.kFactor(participation.player._count.participations, true),
         });
-        for (const participation of match.participations) {
-          const rating = this.eloRating({
-            rating1: participation.player.rating,
-            rating2: teams[1].avgRating,
-            score1: teams[0].score,
-            score2: teams[1].score,
-            k: this.kFactor(participation.player._count.participations, true),
-          });
-          await playerService.update({
-            id: participation.playerId,
-            rating,
-          });
-        }
-        return;
+        await playerService.update({
+          id: participation.playerId,
+          rating,
+        });
       }
-      const playerUpdatePromises = match.participations.map(
-        (participation, index) => {
-          const rating = this.eloRating({
-            rating1: match.participations[index].player.rating,
-            rating2: match.participations[index % 2].player.rating,
-            score1: match.participations[index].score,
-            score2: match.participations[index % 2].score,
-            k: this.kFactor(participation.player._count.participations, false),
-          });
-          return playerService.update({
-            id: participation.playerId,
-            rating,
-          });
-        }
-      );
       await Promise.all(playerUpdatePromises);
       return prisma.match.update({
         where: { id },
