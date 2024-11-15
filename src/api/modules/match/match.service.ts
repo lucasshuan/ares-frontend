@@ -53,7 +53,7 @@ class MatchService {
       const teams = match.teams.map((team) => {
         return {
           ...team,
-          averageRating: eloService.teamAverageRating({ team }),
+          averageRating: eloService.teamAverageRating(team),
         };
       });
 
@@ -62,15 +62,15 @@ class MatchService {
         const opponentTeam = teams[idx === 0 ? 1 : 0];
 
         for (const participation of team.participations) {
-          const numMatchesPlayed = participation.player._count.participations;
-          const numTeamPlayers = team.participations.length;
+          const matchesPlayedCount = participation.player._count.participations;
+          const teamPlayersCount = team.participations.length;
 
           const rating = eloService.rating({
             rating1: participation.player.rating,
             rating2: opponentTeam.averageRating,
             score1: team.score,
             score2: opponentTeam.score,
-            k: eloService.kFactor(numMatchesPlayed, numTeamPlayers),
+            k: eloService.kFactor(matchesPlayedCount, teamPlayersCount),
           });
 
           await prisma.player.update({

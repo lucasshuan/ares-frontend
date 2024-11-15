@@ -1,4 +1,4 @@
-import { EloRatingInput, TeamfightMeanInput } from "./elo.model";
+import { EloRatingInput, TeamAverageRatingInput } from "./elo.model";
 
 class EloService {
   probability(rating1: number, rating2: number) {
@@ -14,7 +14,7 @@ class EloService {
     return rating1 + k * (outcome - probability);
   }
 
-  teamAverageRating({ team }: TeamfightMeanInput) {
+  teamAverageRating(team: TeamAverageRatingInput) {
     const numMembers = team.participations.length;
     let averageRating = 0;
 
@@ -25,9 +25,9 @@ class EloService {
     return averageRating / numMembers;
   }
 
-  kFactor(numMatchesPlayed: number, numTeamPlayers: number) {
-    const mult = numTeamPlayers === 1 ? 2 : 1;
-    return (800 / numMatchesPlayed) * mult;
+  kFactor(matchesPlayedCount: number, teamPlayersCount: number) {
+    const mult = teamPlayersCount === 1 ? 2 : 1;
+    return (800 / matchesPlayedCount) * mult;
   }
 }
 

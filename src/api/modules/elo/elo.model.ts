@@ -6,14 +6,12 @@ export interface EloRatingInput {
   k: number;
 }
 
-export interface TeamfightMeanInput {
-  team: {
-    id: string;
-    score: number;
-    participations: {
-      player: {
-        rating: number;
-      };
-    }[];
-  };
+export interface TeamAverageRatingInput {
+  id: string;
+  score: number;
+  participations: {
+    player: {
+      rating: number;
+    };
+  }[];
 }
