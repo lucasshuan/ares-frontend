@@ -1,5 +1,5 @@
 import { getRegionByCountry } from "@lib/region";
-import { CreateUserDTO, UpdateUserDTO } from "./user.model";
+import { UpdateUserDTO } from "./user.model";
 import { prisma } from "@api/database/prisma";
 
 class UserService {
@@ -12,20 +12,6 @@ class UserService {
       where: { id },
       include: {
         players: true,
-      },
-    });
-  }
-
-  async create({ country, email }: CreateUserDTO) {
-    const region = getRegionByCountry(country);
-
-    if (!region) throw new Error("Invalid country");
-
-    return prisma.user.create({
-      data: {
-        country,
-        email,
-        region,
       },
     });
   }
