@@ -16,14 +16,14 @@ class UserService {
     });
   }
 
-  async update({ id, country, email }: UpdateUserDTO) {
+  async update({ id, country, role }: UpdateUserDTO) {
     const region = country ? getRegionByCountry(country) : undefined;
 
     return prisma.user.update({
       where: { id },
       data: {
         country,
-        email,
+        role,
         region,
       },
     });

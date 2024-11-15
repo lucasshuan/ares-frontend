@@ -1,3 +1,3 @@
 import { User } from "@prisma/client";
 
-export type UpdateUserDTO = Pick<User, "id"> & Partial<CreateUserDTO>;
+export type UpdateUserDTO = Pick<User, "id" | "country" | "role">;
