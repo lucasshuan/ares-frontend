@@ -4,7 +4,7 @@ import {
   ListPlayersDTO,
   UpdatePlayerDTO,
 } from "./player.model";
-import prisma from "@api/database/prisma";
+import { prisma } from "@api/database/prisma";
 
 class PlayerService {
   async list({
