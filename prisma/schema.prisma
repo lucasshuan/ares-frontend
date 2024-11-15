@@ -8,7 +8,7 @@ datasource db {
   directUrl = env("DATABASE_DIRECT_URL")
 }
 
-enum Role {
+enum UserRole {
   ADMIN
   MOD
   GUEST
@@ -34,8 +34,8 @@ enum MatchStatus {
 model Account {
   id                 String    @id @default(cuid())
   userId             String
-  providerType       String
-  providerId         String
+  type               String
+  provider           String
   providerAccountId  String
   refreshToken       String?
   accessToken        String?
@@ -45,7 +45,7 @@ model Account {
 
   user User @relation(fields: [userId], references: [id])
 
-  @@unique([providerId, providerAccountId])
+  @@unique([provider, providerAccountId])
 }
 
 model Session {
@@ -79,7 +79,7 @@ model User {
   image         String?
   country       String?
   region        Region?
-  role          Role      @default(GUEST)
+  role          UserRole  @default(GUEST)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @default(now()) @updatedAt
 
