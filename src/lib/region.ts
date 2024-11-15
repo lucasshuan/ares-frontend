@@ -239,7 +239,7 @@ const countryToRegionMap: { [country: string]: RegionShort } = {
 };
 
 export function getRegionByCountry(countryName: string): Region | undefined {
-  const countryAlpha2 = iso.whereAlpha2(countryName)?.alpha2;
+  const countryAlpha2 = iso.whereCountry(countryName)?.alpha2;
   if (!countryAlpha2) return undefined;
 
   const regionShort = countryToRegionMap[countryAlpha2.toUpperCase()];
