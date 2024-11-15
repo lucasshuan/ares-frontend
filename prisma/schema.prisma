@@ -48,14 +48,14 @@ model Account {
 }
 
 model Player {
-  id          String   @id @default(uuid())
-  accountId   String
-  gameId      String
-  username    String
-  rating      Int      @default(0)
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
+  id        String   @id @default(uuid())
+  accountId String
+  gameId    String
+  username  String   @unique
+  rating    Int      @default(0)
+  biography String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
   game    Game    @relation(fields: [gameId], references: [id], onDelete: Cascade)
@@ -85,31 +85,32 @@ model Game {
 }
 
 model Match {
-  id            String      @id @default(uuid())
-  creatorId     String?
-  gameId        String
-  region        Region
-  status        MatchStatus @default(ACCEPTED)
-  screenshotUrl String?
-  streamUrl     String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @default(now()) @updatedAt
+  id                String      @id @default(uuid())
+  creatorId         String
+  tourneyScheduleId String?
+  gameId            String
+  region            Region
+  status            MatchStatus @default(ACCEPTED)
+  screenshotUrl     String?
+  streamUrl         String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @default(now()) @updatedAt
 
-  creator Account? @relation(fields: [creatorId], references: [id])
-  game    Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  creator  Account          @relation(fields: [creatorId], references: [id])
+  game     Game             @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  schedule TourneySchedule? @relation(fields: [tourneyScheduleId], references: [id])
 
-  teams             MatchTeam[]
-  schedule          TourneySchedule @relation(fields: [tourneyScheduleId], references: [id])
-  tourneyScheduleId String
+  teams Team[]
 }
 
-model MatchTeam {
+model Team {
   id        String   @id @default(uuid())
   matchId   String
+  score     Float
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  matches Match @relation(fields: [matchId], references: [id])
+  match Match @relation(fields: [matchId], references: [id])
 
   participations Participation[]
 }
@@ -122,17 +123,18 @@ model Participation {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  team   MatchTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  player Player    @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
 }
 
 model Clan {
   id          String   @id @default(uuid())
-  name        String
-  description String?
-  region      Region
   ownerId     String
   gameId      String
+  name        String
+  description String?
+  logoUrl     String?
+  region      Region
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
 
@@ -162,10 +164,9 @@ model Tourney {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
 
-  organizer Account @relation(fields: [accountId], references: [id])
+  organizer Account @relation(fields: [organizerId], references: [id])
 
-  rosters   TourneyRoster[]
-  accountId String
+  rosters TourneyRoster[]
 }
 
 model TourneyRoster {
@@ -183,16 +184,16 @@ model TourneyRoster {
 }
 
 model TourneySchedule {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   tourneyId   String
-  matchId     String?
   successorId String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
 
   successor TourneySchedule @relation("PlannedTourneySchedule", fields: [successorId], references: [id])
 
-  predecessors TourneySchedule[] @relation("PlannedTourneySchedule")
   matches      Match[]
   rosters      TourneyRoster[]
+  predecessors TourneySchedule[] @relation("PlannedTourneySchedule")
 }

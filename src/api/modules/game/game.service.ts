@@ -1,5 +1,5 @@
-import prisma from "../prisma";
-import { CreateGameDTO, UpdateGameDTO } from "../models/game_model";
+import prisma from "@api/database/prisma";
+import { CreateGameDTO, UpdateGameDTO } from "./game.model";
 
 class GameService {
   async list() {

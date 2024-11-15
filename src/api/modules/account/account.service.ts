@@ -1,6 +1,6 @@
-import { getRegionByCountry } from "@/lib/region";
-import prisma from "../prisma";
-import { CreateAccountDTO, UpdateAccountDTO } from "../models/account_model";
+import { getRegionByCountry } from "@lib/region";
+import { CreateAccountDTO, UpdateAccountDTO } from "./account.model";
+import prisma from "@api/database/prisma";
 
 class AccountService {
   async list() {

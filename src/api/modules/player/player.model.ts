@@ -2,13 +2,9 @@ import { Player, Region } from "@prisma/client";
 
 export interface ListPlayersDTO {
   username?: string;
-  game?: {
-    name?: string;
-  };
-  account?: {
-    region?: Region;
-    country?: string;
-  };
+  gameName?: string;
+  region?: Region;
+  country?: string;
   skip?: number;
   take?: number;
   order?: "asc" | "desc";
