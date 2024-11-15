@@ -10,11 +10,9 @@ export interface ListPlayersDTO {
   take?: number;
 }
 
-export interface CreatePlayerDTO {
-  username: string;
-  gameId: string;
-  accountId: string;
-  rating?: number;
-}
+export type CreatePlayerDTO = Pick<
+  Player,
+  "username" | "gameId" | "userId" | "rating"
+>;
 
 export type UpdatePlayerDTO = Pick<Player, "id"> & Partial<CreatePlayerDTO>;

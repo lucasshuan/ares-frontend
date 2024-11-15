@@ -19,7 +19,7 @@ class PlayerService {
     return prisma.player.findMany({
       where: {
         username: insensitiveSearch(username),
-        account: {
+        user: {
           country: insensitiveSearch(country),
           region,
         },
@@ -39,7 +39,7 @@ class PlayerService {
     return prisma.player.findUnique({
       where: { id },
       include: {
-        account: true,
+        user: true,
         game: true,
         clanMemberships: true,
         ownedClans: true,
