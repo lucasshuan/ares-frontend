@@ -32,48 +32,53 @@ enum MatchStatus {
 }
 
 model Account {
-  id             String  @id @default(cuid())
-  userId         String
-  type           String
-  provider       String
-  provideruserId String
-  refresh_token  String? @db.Text
-  access_token   String? @db.Text
-  expires_at     Int?
-  token_type     String?
-  scope          String?
-  id_token       String? @db.Text
-  session_state  String?
+  id                 String    @id @default(cuid())
+  userId             String
+  providerType       String
+  providerId         String
+  providerAccountId  String
+  refreshToken       String?
+  accessToken        String?
+  accessTokenExpires DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
 
-  @@unique([provider, provideruserId])
+  @@unique([providerId, providerAccountId])
 }
 
 model Session {
   id           String   @id @default(cuid())
-  sessionToken String   @unique
   userId       String
   expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionToken String   @unique
+  accessToken  String   @unique
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
 }
 
-model VerificationToken {
+model VerificationRequest {
+  id         String   @id @default(cuid())
   identifier String
-  token      String
+  token      String   @unique
   expires    DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@unique([identifier, token])
 }
 
 model User {
-  id            String    @id @default(uuid())
+  id            String    @id @default(cuid())
   name          String?
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-  country       String
-  region        Region
+  country       String?
+  region        Region?
   role          Role      @default(GUEST)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @default(now()) @updatedAt
@@ -88,7 +93,7 @@ model User {
 }
 
 model Player {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   userId    String
   gameId    String
   username  String   @unique
@@ -112,7 +117,7 @@ model Player {
 }
 
 model Game {
-  id                 String   @id @default(uuid())
+  id                 String   @id @default(cuid())
   name               String   @unique
   description        String?
   officialWebsiteUrl String?
@@ -128,7 +133,7 @@ model Game {
 }
 
 model Match {
-  id                String      @id @default(uuid())
+  id                String      @id @default(cuid())
   creatorId         String
   tourneyScheduleId String?
   gameId            String
@@ -147,7 +152,7 @@ model Match {
 }
 
 model Team {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   matchId   String
   score     Float
   createdAt DateTime @default(now())
@@ -159,7 +164,7 @@ model Team {
 }
 
 model Participation {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   teamId    String
   playerId  String
   info      Json?
@@ -171,7 +176,7 @@ model Participation {
 }
 
 model Clan {
-  id          String   @id @default(uuid())
+  id          String   @id @default(cuid())
   ownerId     String
   gameId      String
   name        String
@@ -191,7 +196,7 @@ model Clan {
 }
 
 model ClanMember {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   label     String?
   playerId  String
   clanId    String
@@ -203,7 +208,7 @@ model ClanMember {
 }
 
 model ClanInvite {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   clanId    String
   playerId  String
   createdAt DateTime @default(now())
@@ -214,7 +219,7 @@ model ClanInvite {
 }
 
 model ClanApplication {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   plead     String?
   clanId    String
   playerId  String
@@ -226,7 +231,7 @@ model ClanApplication {
 }
 
 model Tourney {
-  id          String   @id @default(uuid())
+  id          String   @id @default(cuid())
   organizerId String
   region      Region?
   name        String
@@ -240,7 +245,7 @@ model Tourney {
 }
 
 model TourneyRoster {
-  id        String   @id @default(uuid())
+  id        String   @id @default(cuid())
   tourneyId String
   name      String
   logoUrl   String?
@@ -254,7 +259,7 @@ model TourneyRoster {
 }
 
 model TourneySchedule {
-  id          String    @id @default(uuid())
+  id          String    @id @default(cuid())
   tourneyId   String
   successorId String
   expiresAt   DateTime?
