@@ -1,4 +1,4 @@
-import { Clan } from "@prisma/client";
+import { Clan, Prisma } from "@prisma/client";
 
 export type CreateClanDTO = Pick<
   Clan,
@@ -8,10 +8,9 @@ export type CreateClanDTO = Pick<
 export type UpdateClanDTO = Pick<Clan, "id"> & Partial<CreateClanDTO>;
 
 export interface ListClansDTO {
-  game: {
-    id: string;
-  };
+  gameId?: string;
+  gameName?: string;
+  order?: Prisma.SortOrder;
   skip?: number;
   take?: number;
-  order?: "asc" | "desc";
 }

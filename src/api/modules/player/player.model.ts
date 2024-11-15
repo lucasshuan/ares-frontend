@@ -1,13 +1,13 @@
-import { Player, Region } from "@prisma/client";
+import { Player, Prisma, Region } from "@prisma/client";
 
 export interface ListPlayersDTO {
   username?: string;
   gameName?: string;
   region?: Region;
   country?: string;
+  order?: Prisma.SortOrder;
   skip?: number;
   take?: number;
-  order?: "asc" | "desc";
 }
 
 export interface CreatePlayerDTO {

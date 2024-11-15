@@ -34,6 +34,7 @@ class MatchService {
   }
 
   async create({ teams, ...data }: CreateMatchDTO) {
+    if (teams.length !== 2) throw new Error("Invalid number of teams");
     return prisma.$transaction(async (prisma) => {
       const match = await prisma.match.create({ data });
       await prisma.team.createMany({

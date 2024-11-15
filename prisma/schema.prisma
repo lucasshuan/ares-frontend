@@ -135,6 +135,7 @@ model Clan {
   description String?
   logoUrl     String?
   region      Region
+  rating      Int
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
 
