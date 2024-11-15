@@ -32,24 +32,64 @@ enum MatchStatus {
 }
 
 model Account {
-  id          String   @id @default(uuid())
-  googleEmail String   @unique
-  country     String
-  region      Region
-  role        Role     @default(GUEST)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now()) @updatedAt
+  id             String  @id @default(cuid())
+  userId         String
+  type           String
+  provider       String
+  provideruserId String
+  refresh_token  String? @db.Text
+  access_token   String? @db.Text
+  expires_at     Int?
+  token_type     String?
+  scope          String?
+  id_token       String? @db.Text
+  session_state  String?
 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, provideruserId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model User {
+  id            String    @id @default(uuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  country       String
+  region        Region
+  role          Role      @default(GUEST)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @default(now()) @updatedAt
+
+  accounts          Account[]
+  sessions          Session[]
   players           Player[]
+  following         User[]    @relation("UserFollowers")
+  followers         User[]    @relation("UserFollowers")
   tourneysOrganized Tourney[]
   matchesCreated    Match[]
-  following         Account[] @relation("AccountFollowers")
-  followers         Account[] @relation("AccountFollowers")
 }
 
 model Player {
   id        String   @id @default(uuid())
-  accountId String
+  userId    String
   gameId    String
   username  String   @unique
   rating    Int      @default(0)
@@ -58,8 +98,8 @@ model Player {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  game    Game    @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
   participations   Participation[]
   clanMemberships  ClanMember[]
@@ -99,7 +139,7 @@ model Match {
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @default(now()) @updatedAt
 
-  creator  Account          @relation(fields: [creatorId], references: [id])
+  creator  User             @relation(fields: [creatorId], references: [id])
   game     Game             @relation(fields: [gameId], references: [id], onDelete: Cascade)
   schedule TourneySchedule? @relation(fields: [tourneyScheduleId], references: [id])
 
@@ -194,7 +234,7 @@ model Tourney {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
 
-  organizer Account @relation(fields: [organizerId], references: [id])
+  organizer User @relation(fields: [organizerId], references: [id])
 
   rosters TourneyRoster[]
 }
