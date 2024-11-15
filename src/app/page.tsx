@@ -3,10 +3,10 @@ import { signIn, signOut, useSession } from "next-auth/react"
 
 export default function Home() {
   const session = useSession()
-  if (session.data) {
+  if (session.data && session.data.user) {
     return (
       <>
-        Signed in as {session.data.user?.email} <br />
+        Signed in as {session.data.user.email} <br />
         <button onClick={() => signOut()}>Sign out</button>
       </>
     )
