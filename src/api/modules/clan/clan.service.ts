@@ -1,6 +1,6 @@
 import prisma from "@api/database/prisma";
 import { CreateClanDTO, ListClansDTO, UpdateClanDTO } from "./clan.model";
-import { insensitiveSearch } from "@lib/db";
+import { insensitiveSearch } from "@api/utils/db";
 import { playerService } from "../player/player.service";
 
 class ClanService {
@@ -37,6 +37,11 @@ class ClanService {
     return prisma.clan.create({
       data: {
         rating: owner?.rating,
+        members: {
+          create: {
+            playerId: data.ownerId,
+          },
+        },
         ...data,
       },
     });

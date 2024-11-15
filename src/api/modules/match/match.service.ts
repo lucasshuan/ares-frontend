@@ -1,7 +1,7 @@
 import { CreateMatchDTO, UpdateMatchDTO } from "./match.model";
 import prisma from "@api/database/prisma";
-import { eloService } from "../elo/elo.service";
 import { MatchStatus } from "@prisma/client";
+import { eloService } from "../elo/elo.service";
 
 class MatchService {
   async list() {

@@ -54,16 +54,19 @@ model Player {
   username  String   @unique
   rating    Int      @default(0)
   biography String?
+  anonymous Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
   account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
   game    Game    @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
-  participations  Participation[]
-  clanMemberships ClanMember[]
-  ownedClans      Clan[]
-  tourneyRosters  TourneyRoster[]
+  participations   Participation[]
+  clanMemberships  ClanMember[]
+  ownedClans       Clan[]
+  tourneyRosters   TourneyRoster[]
+  clanApplications ClanApplication[]
+  clanInvites      ClanInvite[]
 
   @@unique([gameId, username])
 }
@@ -142,11 +145,14 @@ model Clan {
   game  Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
   owner Player @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
-  members ClanMember[]
+  members      ClanMember[]
+  applications ClanApplication[]
+  invites      ClanInvite[]
 }
 
 model ClanMember {
   id        String   @id @default(uuid())
+  label     String?
   playerId  String
   clanId    String
   createdAt DateTime @default(now())
@@ -154,6 +160,29 @@ model ClanMember {
 
   clan   Clan   @relation(fields: [clanId], references: [id], onDelete: Cascade)
   player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+}
+
+model ClanInvite {
+  id        String   @id @default(uuid())
+  clanId    String
+  playerId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  clan   Clan   @relation(fields: [clanId], references: [id])
+  player Player @relation(fields: [playerId], references: [id])
+}
+
+model ClanApplication {
+  id        String   @id @default(uuid())
+  plead     String?
+  clanId    String
+  playerId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  clan   Clan   @relation(fields: [clanId], references: [id])
+  player Player @relation(fields: [playerId], references: [id])
 }
 
 model Tourney {
