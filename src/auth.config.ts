@@ -11,4 +11,5 @@ export default {
     }),
   ],
   adapter: PrismaAdapter(prisma),
+  secret: process.env.NEXTAUTH_SECRET,
 } satisfies NextAuthOptions;
