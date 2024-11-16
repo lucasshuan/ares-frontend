@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Button } from "./ui/button";
-import { signIn, useSession } from "next-auth/react";
+import { signIn, signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 
 export default function Header() {
@@ -19,7 +19,7 @@ export default function Header() {
         {session && session.user ? (
           <>
             <Button
-              onClick={() => signIn("google")}
+              onClick={() => signOut()}
               variant="ghost"
               className="text-md"
             >
