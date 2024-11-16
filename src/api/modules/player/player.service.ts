@@ -1,10 +1,10 @@
-import { insensitiveSearch } from "@api/utils/db";
+import { insensitiveSearch } from "@/api/shared/utils/db";
 import {
   CreatePlayerDTO,
   ListPlayersDTO,
   UpdatePlayerDTO,
 } from "./player.model";
-import { prisma } from "@api/database/prisma";
+import { prisma } from "@/api/shared/database/prisma";
 
 class PlayerService {
   async list({

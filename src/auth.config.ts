@@ -1,4 +1,4 @@
-import { prisma } from "@api/database/prisma";
+import { prisma } from "@/api/shared/database/prisma";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";

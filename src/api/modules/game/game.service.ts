@@ -1,4 +1,4 @@
-import { prisma } from "@api/database/prisma";
+import { prisma } from "@/api/shared/database/prisma";
 import { CreateGameDTO, UpdateGameDTO } from "./game.model";
 
 class GameService {

@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { Button } from "./ui/button";
 import { signIn, signOut, useSession } from "next-auth/react";
-import Image from "next/image";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LogInIcon, LogOutIcon } from "lucide-react";
 
 export default function Header() {
   const { data: session } = useSession();
@@ -24,23 +25,27 @@ export default function Header() {
               className="text-md"
             >
               Sign Out
+              <LogOutIcon />
             </Button>
-            <Image
-              src={session.user.image!}
-              alt="user avatar"
-              className="rounded-3xl"
-              width={32}
-              height={32}
-            />
+            <Avatar>
+              <AvatarImage
+                src={session.user.image!}
+                alt="user avatar"
+              ></AvatarImage>
+              <AvatarFallback>CN</AvatarFallback>
+            </Avatar>
           </>
         ) : (
-          <Button
-            onClick={() => signIn("google")}
-            variant="ghost"
-            className="text-md"
-          >
-            Sign In
-          </Button>
+          <>
+            <Button
+              onClick={() => signIn("google")}
+              variant="ghost"
+              className="text-md"
+            >
+              Sign In
+              <LogInIcon size={22} />
+            </Button>
+          </>
         )}
       </div>
     </header>

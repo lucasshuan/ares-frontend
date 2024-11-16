@@ -1,6 +1,6 @@
-import { prisma } from "@api/database/prisma";
+import { prisma } from "@/api/shared/database/prisma";
 import { CreateClanDTO, ListClansDTO, UpdateClanDTO } from "./clan.model";
-import { insensitiveSearch } from "@api/utils/db";
+import { insensitiveSearch } from "@/api/shared/utils/db";
 import { playerService } from "../player/player.service";
 
 class ClanService {
