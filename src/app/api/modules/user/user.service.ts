@@ -1,6 +1,6 @@
 import { getRegionByCountry } from "@lib/region";
 import { UpdateUserDTO } from "./user.model";
-import { prisma } from "@api/database/prisma";
+import { prisma } from "@/app/api/database/prisma";
 
 class UserService {
   async list() {

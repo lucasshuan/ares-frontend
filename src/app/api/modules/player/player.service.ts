@@ -1,15 +1,14 @@
-import { insensitiveSearch } from "@api/utils/db";
+import { insensitiveSearch } from "@/app/api/utils/db";
 import {
   CreatePlayerDTO,
   ListPlayersDTO,
   UpdatePlayerDTO,
 } from "./player.model";
-import { prisma } from "@api/database/prisma";
+import { prisma } from "@/app/api/database/prisma";
 
 class PlayerService {
   async list({
     gameName,
-    region,
     country,
     username,
     order,
@@ -21,7 +20,6 @@ class PlayerService {
         username: insensitiveSearch(username),
         user: {
           country: insensitiveSearch(country),
-          region,
         },
         game: {
           name: insensitiveSearch(gameName),

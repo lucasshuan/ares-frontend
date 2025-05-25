@@ -1,4 +1,4 @@
-import { EloRatingInput, TeamAverageRatingInput } from "./elo.model";
+import { EloRatingInput } from "./elo.model";
 
 class EloService {
   probability(rating1: number, rating2: number) {
@@ -12,17 +12,6 @@ class EloService {
     const probability = this.probability(rating1, rating2);
 
     return rating1 + k * (outcome - probability);
-  }
-
-  teamAverageRating(team: TeamAverageRatingInput) {
-    const numMembers = team.participations.length;
-    let averageRating = 0;
-
-    team.participations.forEach((participation) => {
-      averageRating += participation.player.rating;
-    });
-
-    return averageRating / numMembers;
   }
 
   kFactor(matchesPlayedCount: number, teamPlayersCount: number) {

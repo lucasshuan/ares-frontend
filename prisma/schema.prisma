@@ -8,31 +8,21 @@ datasource db {
   directUrl = env("DATABASE_DIRECT_URL")
 }
 
-enum UserRole {
-  ADMIN
-  MOD
-  GUEST
-}
-
-enum Region {
-  NORTH_AMERICA
-  SOUTH_AMERICA
-  EUROPE
-  AFRICA
-  ASIA
-  OCEANIA
-}
-
 enum MatchStatus {
   ACCEPTED
   REJECTED
-  PENDING_ACCEPTANCE
+  PENDING_VERIFICATION
   IN_PROGRESS
   SCHEDULED
 }
 
+enum MediaType {
+  YOUTUBE
+  TWITCH
+}
+
 model Account {
-  userId            String
+  userId            Int
   type              String
   provider          String
   providerAccountId String
@@ -43,9 +33,8 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -54,12 +43,12 @@ model Account {
 
 model Session {
   sessionToken String   @unique
-  userId       String
+  userId       Int
   expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {
@@ -70,124 +59,155 @@ model VerificationToken {
   @@id([identifier, token])
 }
 
+model Log {
+  id      Int    @id @default(autoincrement())
+  message String
+}
+
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
+  id            Int       @id @default(autoincrement())
+  name          String
+  email         String    @unique
   emailVerified DateTime?
+  country       String
   image         String?
-  country       String?
-  region        Region?
-  role          UserRole  @default(GUEST)
+  biography     String?
+  anonymous     Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @default(now()) @updatedAt
 
   accounts          Account[]
   sessions          Session[]
-  players           Player[]
-  following         User[]    @relation("UserFollowers")
-  followers         User[]    @relation("UserFollowers")
+  following         User[]            @relation("UserFollows")
+  followers         User[]            @relation("UserFollows")
   tourneysOrganized Tourney[]
   matchesCreated    Match[]
+  participations    Participation[]
+  clanMemberships   ClanMember[]
+  clansOwned        Clan[]
+  tourneyRosters    TourneyRoster[]
+  clanApplications  ClanApplication[]
+  clanInvites       ClanInvite[]
+  userPermissions   UserPermission[]
+  matchMedias       MatchMedia[]
 }
 
-model Player {
-  id        String   @id @default(cuid())
-  userId    String
-  gameId    String
-  username  String   @unique
-  rating    Int      @default(0)
-  biography String?
-  anonymous Boolean  @default(false)
+model Permission {
+  id        Int      @id @default(autoincrement())
+  name      String
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userPermissions UserPermission[]
+}
+
+model UserPermission {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  permissionId Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+}
+
+model RegisteredUsername {
+  id        String   @id @default(cuid())
+  gameId    Int
+  username  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
   game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
 
-  participations   Participation[]
-  clanMemberships  ClanMember[]
-  ownedClans       Clan[]
-  tourneyRosters   TourneyRoster[]
-  clanApplications ClanApplication[]
-  clanInvites      ClanInvite[]
-
-  @@unique([gameId, username])
+  @@unique([username, gameId])
 }
 
 model Game {
-  id                 String   @id @default(cuid())
+  id                 Int      @id @default(autoincrement())
   name               String   @unique
   description        String?
   officialWebsiteUrl String?
   steamUrl           String?
   thumbnailUrl       String?
-  backgroundUrl      String?
+  logoUrl            String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @default(now()) @updatedAt
 
-  matches Match[]
-  players Player[]
-  clans   Clan[]
+  matches             Match[]
+  registeredUsernames RegisteredUsername[]
 }
 
 model Match {
-  id                String      @id @default(cuid())
-  creatorId         String
-  tourneyScheduleId String?
-  gameId            String
-  region            Region
-  status            MatchStatus @default(ACCEPTED)
-  screenshotUrl     String?
-  streamUrl         String?
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @default(now()) @updatedAt
+  id              Int         @id @default(autoincrement())
+  creatorId       Int
+  gameId          Int
+  tourneyId       Int?
+  winnerId        Int         @unique
+  loserId         Int         @unique
+  status          MatchStatus @default(ACCEPTED)
+  description     String?
+  screenshotUrl   String?
+  youtubeVideoUrl String?
+  twitchVodUrl    String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @default(now()) @updatedAt
 
-  creator  User             @relation(fields: [creatorId], references: [id])
-  game     Game             @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  schedule TourneySchedule? @relation(fields: [tourneyScheduleId], references: [id])
-
-  teams Team[]
+  creator    User     @relation(fields: [creatorId], references: [id])
+  game       Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  tourney    Tourney? @relation(fields: [tourneyId], references: [id])
+  winnerSide Side     @relation("WinnerSide", fields: [winnerId], references: [id])
+  loserSide  Side     @relation("LoserSide", fields: [loserId], references: [id])
 }
 
-model Team {
-  id        String   @id @default(cuid())
+model MatchMedia {
+  id        Int       @id @default(autoincrement())
+  authorId  Int
+  url       String
+  type      MediaType
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
+
+  author User @relation(fields: [authorId], references: [id])
+}
+
+model Side {
+  id        Int      @id @default(autoincrement())
   matchId   String
-  score     Float
+  score     Int
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  match Match @relation(fields: [matchId], references: [id])
-
   participations Participation[]
+  matchWon       Match?          @relation("WinnerSide")
+  matchLost      Match?          @relation("LoserSide")
 }
 
 model Participation {
-  id        String   @id @default(cuid())
-  teamId    String
-  playerId  String
+  id        Int      @id @default(autoincrement())
+  sideId    Int
+  userId    Int
   info      Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  side Side @relation(fields: [sideId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sideId, userId])
 }
 
 model Clan {
-  id          String   @id @default(cuid())
-  ownerId     String
-  gameId      String
+  id          Int      @id @default(autoincrement())
+  ownerId     Int
   name        String
   description String?
   logoUrl     String?
-  region      Region
-  rating      Int
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
 
-  game  Game   @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  owner Player @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   members      ClanMember[]
   applications ClanApplication[]
@@ -195,44 +215,49 @@ model Clan {
 }
 
 model ClanMember {
-  id        String   @id @default(cuid())
+  id        Int      @id @default(autoincrement())
+  clanId    Int
+  userId    Int
   label     String?
-  playerId  String
-  clanId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  clan   Clan   @relation(fields: [clanId], references: [id], onDelete: Cascade)
-  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  clan Clan @relation(fields: [clanId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([clanId, userId])
 }
 
 model ClanInvite {
-  id        String   @id @default(cuid())
-  clanId    String
-  playerId  String
+  id        Int      @id @default(autoincrement())
+  clanId    Int
+  userId    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  clan   Clan   @relation(fields: [clanId], references: [id])
-  player Player @relation(fields: [playerId], references: [id])
+  clan Clan @relation(fields: [clanId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([clanId, userId])
 }
 
 model ClanApplication {
-  id        String   @id @default(cuid())
+  id        Int      @id @default(autoincrement())
+  clanId    Int
+  userId    Int
   plead     String?
-  clanId    String
-  playerId  String
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-  clan   Clan   @relation(fields: [clanId], references: [id])
-  player Player @relation(fields: [playerId], references: [id])
+  clan Clan @relation(fields: [clanId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([clanId, userId])
 }
 
 model Tourney {
-  id          String   @id @default(cuid())
-  organizerId String
-  region      Region?
+  id          Int      @id @default(autoincrement())
+  organizerId Int
   name        String
   description String?
   createdAt   DateTime @default(now())
@@ -241,33 +266,20 @@ model Tourney {
   organizer User @relation(fields: [organizerId], references: [id])
 
   rosters TourneyRoster[]
+  matches Match[]
 }
 
 model TourneyRoster {
-  id        String   @id @default(cuid())
-  tourneyId String
+  id        Int      @id @default(autoincrement())
+  tourneyId Int
   name      String
-  logoUrl   String?
+  imageUrl  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
   tourney Tourney @relation(fields: [tourneyId], references: [id])
 
-  players   Player[]
-  schedules TourneySchedule[]
-}
+  users User[]
 
-model TourneySchedule {
-  id          String    @id @default(cuid())
-  tourneyId   String
-  successorId String
-  expiresAt   DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @default(now()) @updatedAt
-
-  successor TourneySchedule @relation("PlannedTourneySchedule", fields: [successorId], references: [id])
-
-  matches      Match[]
-  rosters      TourneyRoster[]
-  predecessors TourneySchedule[] @relation("PlannedTourneySchedule")
+  @@unique([tourneyId, name])
 }
